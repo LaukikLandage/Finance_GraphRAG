@@ -1,4 +1,268 @@
 <?xml version='1.0' encoding='utf-8'?>
 <graphml xmlns="http://graphml.graphdrawing.org/xmlns" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://graphml.graphdrawing.org/xmlns http://graphml.graphdrawing.org/xmlns/1.0/graphml.xsd">
-  <graph edgedefault="undirected" />
+  <key id="d6" for="edge" attr.name="order" attr.type="long" />
+  <key id="d5" for="edge" attr.name="source_id" attr.type="string" />
+  <key id="d4" for="edge" attr.name="description" attr.type="string" />
+  <key id="d3" for="edge" attr.name="weight" attr.type="double" />
+  <key id="d2" for="node" attr.name="source_id" attr.type="string" />
+  <key id="d1" for="node" attr.name="description" attr.type="string" />
+  <key id="d0" for="node" attr.name="entity_type" attr.type="string" />
+  <graph edgedefault="undirected">
+    <node id="&quot;COLETTE KRESS&quot;">
+      <data key="d0">"PERSON"</data>
+      <data key="d1">"Colette Kress is NVIDIA’s executive vice president and chief financial officer."</data>
+      <data key="d2">chunk-aacc05ee1a9bddba0ccd00abf523786f</data>
+    </node>
+    <node id="&quot;NVIDIA&quot;">
+      <data key="d0">"ORGANIZATION"</data>
+      <data key="d1">"NVIDIA Corporation is an organization that provides forward-looking statements about its performance, subject to risks and uncertainties."&lt;SEP&gt;"NVIDIA is a technology company that produces graphics cards, datacenter products, and artificial intelligence hardware."</data>
+      <data key="d2">chunk-e9bb1e8500cf9eb0f0943644663c0b2b&lt;SEP&gt;chunk-aacc05ee1a9bddba0ccd00abf523786f</data>
+    </node>
+    <node id="&quot;USA&quot;">
+      <data key="d0">"GEO"</data>
+      <data key="d1">"USA refers to the United States of America."</data>
+      <data key="d2">chunk-aacc05ee1a9bddba0ccd00abf523786f</data>
+    </node>
+    <node id="&quot;GERMANY &quot;">
+      <data key="d0">" GEO</data>
+      <data key="d1">"Germany refers to Germany."</data>
+      <data key="d2">chunk-aacc05ee1a9bddba0ccd00abf523786f</data>
+    </node>
+    <node id="&quot;SOUTH KOREA &quot;">
+      <data key="d0">" GEO</data>
+      <data key="d1">"South Korea refers to South Korea."</data>
+      <data key="d2">chunk-aacc05ee1a9bddba0ccd00abf523786f</data>
+    </node>
+    <node id="&quot;TOKYO, JAPAN &quot;">
+      <data key="d0">" GEO</data>
+      <data key="d1">"Tokyo, Japan refers to Tokyo, Japan."</data>
+      <data key="d2">chunk-aacc05ee1a9bddba0ccd00abf523786f</data>
+    </node>
+    <node id="&quot;SEOUL, SOUTH KOREA &quot;">
+      <data key="d0">" GEO</data>
+      <data key="d1">"Seoul, South Korea refers to Seoul, South Korea."</data>
+      <data key="d2">chunk-aacc05ee1a9bddba0ccd00abf523786f</data>
+    </node>
+    <node id="&quot;NASCOLE &quot;">
+      <data key="d0">" ORGANIZATION "</data>
+      <data key="d1">Nascle is an industrial leader."</data>
+      <data key="d2">chunk-aacc05ee1a9bddba0ccd00abf523786f</data>
+    </node>
+    <node id="&quot;PTC &quot;">
+      <data key="d0">"ORGANIZATION "</data>
+      <data key="d1">PTC is a solutions provider."</data>
+      <data key="d2">chunk-aacc05ee1a9bddba0ccd00abf523786f</data>
+    </node>
+    <node id="&quot;SIEMENS &quot;">
+      <data key="d0">"ORGANIZATION "</data>
+      <data key="d1">Siemens is a industrial solution provider."</data>
+      <data key="d2">chunk-aacc05ee1a9bddba0ccd00abf523786f</data>
+    </node>
+    <node id="&quot;FOXCONN &quot;">
+      <data key="d0">"ORGANIZATION "</data>
+      <data key="d1">Foxconn is an industrial leader."</data>
+      <data key="d2">chunk-aacc05ee1a9bddba0ccd00abf523786f</data>
+    </node>
+    <node id="&quot;AMAZON ROBOTICS &quot;">
+      <data key="d0">"ORGANIZATION "</data>
+      <data key="d1">Amazon Robotics is a robotics company."</data>
+      <data key="d2">chunk-aacc05ee1a9bddba0ccd00abf523786f</data>
+    </node>
+    <node id="&quot;AGILITY ROBOTICS &quot;">
+      <data key="d0">"ORGANIZATION "</data>
+      <data key="d1">Agility Robotics is a robotics company."</data>
+      <data key="d2">chunk-aacc05ee1a9bddba0ccd00abf523786f</data>
+    </node>
+    <node id="&quot;BELDEN &quot;">
+      <data key="d0">"ORGANIZATION "</data>
+      <data key="d1">Belden is an industrial leader."</data>
+      <data key="d2">chunk-aacc05ee1a9bddba0ccd00abf523786f</data>
+    </node>
+    <node id="&quot;CATERPILLAR &quot;">
+      <data key="d0">"ORGANIZATION "</data>
+      <data key="d1">Caterpillar is a manufacturing and robotics leader."</data>
+      <data key="d2">chunk-aacc05ee1a9bddba0ccd00abf523786f</data>
+    </node>
+    <node id="&quot;LUCID MOTORS &quot;">
+      <data key="d0">"ORGANIZATION "</data>
+      <data key="d1">Lucid Motors is a manufacturing company."</data>
+      <data key="d2">chunk-aacc05ee1a9bddba0ccd00abf523786f</data>
+    </node>
+    <node id="&quot;SKILD AI &quot;">
+      <data key="d0">"ORGANIZATION "</data>
+      <data key="d1">Skild AI is an industrial leader."</data>
+      <data key="d2">chunk-aacc05ee1a9bddba0ccd00abf523786f</data>
+    </node>
+    <node id="&quot;TOYOTA &quot;">
+      <data key="d0">"ORGANIZATION "</data>
+      <data key="d1">Toyota is a automotive company."</data>
+      <data key="d2">chunk-aacc05ee1a9bddba0ccd00abf523786f</data>
+    </node>
+    <node id="&quot;WISTRON &quot;">
+      <data key="d0">"ORGANIZATION "</data>
+      <data key="d1">Wistron is an industrial leader."</data>
+      <data key="d2">chunk-aacc05ee1a9bddba0ccd00abf523786f</data>
+    </node>
+    <node id="&quot;ALEX&quot;">
+      <data key="d0">"PERSON"</data>
+      <data key="d1">"Alex is a character who experiences frustration and is observant of the dynamics among other characters."&lt;SEP&gt;"Alex is the leader of a team attempting first contact with an unknown intelligence, acknowledging the significance of their task."</data>
+      <data key="d2">chunk-1a56ad86ccf3df6d397b5c3072087637&lt;SEP&gt;chunk-78df1f539992cb28c28a410f21531b64</data>
+    </node>
+    <node id="&quot;TAYLOR&quot;">
+      <data key="d0">"PERSON"</data>
+      <data key="d1">"Taylor is portrayed with authoritarian certainty and shows a moment of reverence towards a device, indicating a change in perspective."</data>
+      <data key="d2">chunk-1a56ad86ccf3df6d397b5c3072087637&lt;SEP&gt;chunk-78df1f539992cb28c28a410f21531b64</data>
+    </node>
+    <node id="&quot;JORDAN&quot;">
+      <data key="d0">"PERSON"</data>
+      <data key="d1">"Jordan shares a commitment to discovery and has a significant interaction with Taylor regarding a device."</data>
+      <data key="d2">chunk-1a56ad86ccf3df6d397b5c3072087637&lt;SEP&gt;chunk-78df1f539992cb28c28a410f21531b64</data>
+    </node>
+    <node id="&quot;CRUZ&quot;">
+      <data key="d0">"PERSON"</data>
+      <data key="d1">"Cruz is associated with a vision of control and order, influencing the dynamics among other characters."</data>
+      <data key="d2">chunk-1a56ad86ccf3df6d397b5c3072087637&lt;SEP&gt;chunk-78df1f539992cb28c28a410f21531b64</data>
+    </node>
+    <node id="&quot;THE DEVICE&quot;">
+      <data key="d0">"TECHNOLOGY"</data>
+      <data key="d1">"The Device is central to the story, with potential game-changing implications, and is revered by Taylor."</data>
+      <data key="d2">chunk-1a56ad86ccf3df6d397b5c3072087637&lt;SEP&gt;chunk-78df1f539992cb28c28a410f21531b64</data>
+    </node>
+    <node id="&quot;WASHINGTON&quot;">
+      <data key="d0">"LOCATION"</data>
+      <data key="d1">"Washington is a location where communications are being received, indicating its importance in the decision-making process."&lt;SEP&gt;"Washington refers to the location where communications are being received, indicating its importance in the decision-making process."</data>
+      <data key="d2">chunk-1a56ad86ccf3df6d397b5c3072087637&lt;SEP&gt;chunk-78df1f539992cb28c28a410f21531b64&lt;SEP&gt;chunk-e0cb40afc3ae079d7936969df0855775</data>
+    </node>
+    <node id="&quot;OPERATION: DULCE&quot;">
+      <data key="d0">"MISSION"</data>
+      <data key="d1">"Operation: Dulce is a mission that has evolved to interact and prepare, indicating a significant shift in objectives and activities."&lt;SEP&gt;"Operation: Dulce is described as a mission that has evolved to interact and prepare, indicating a significant shift in objectives and activities."</data>
+      <data key="d2">chunk-1a56ad86ccf3df6d397b5c3072087637&lt;SEP&gt;chunk-78df1f539992cb28c28a410f21531b64&lt;SEP&gt;chunk-e0cb40afc3ae079d7936969df0855775</data>
+    </node>
+    <node id="&quot;THE TEAM&quot;">
+      <data key="d0">"ORGANIZATION"</data>
+      <data key="d1">"The team is portrayed as a group of individuals who have transitioned from passive observers to active participants in a mission, showing a dynamic change in their role."</data>
+      <data key="d2">chunk-1a56ad86ccf3df6d397b5c3072087637&lt;SEP&gt;chunk-78df1f539992cb28c28a410f21531b64</data>
+    </node>
+    <node id="&quot;SAM RIVERA&quot;">
+      <data key="d0">"PERSON"</data>
+      <data key="d1">"Sam Rivera is a member of a team working on communicating with an unknown intelligence, showing a mix of awe and anxiety."</data>
+      <data key="d2">chunk-1a56ad86ccf3df6d397b5c3072087637</data>
+    </node>
+    <node id="&quot;CONTROL&quot;">
+      <data key="d0">"CONCEPT"</data>
+      <data key="d1">"Control refers to the ability to manage or govern, which is challenged by an intelligence that writes its own rules."</data>
+      <data key="d2">chunk-1a56ad86ccf3df6d397b5c3072087637</data>
+    </node>
+    <node id="&quot;INTELLIGENCE&quot;">
+      <data key="d0">"CONCEPT"</data>
+      <data key="d1">"Intelligence here refers to an unknown entity capable of writing its own rules and learning to communicate."</data>
+      <data key="d2">chunk-1a56ad86ccf3df6d397b5c3072087637</data>
+    </node>
+    <node id="&quot;FIRST CONTACT&quot;">
+      <data key="d0">"EVENT"</data>
+      <data key="d1">"First Contact is the potential initial communication between humanity and an unknown intelligence."</data>
+      <data key="d2">chunk-1a56ad86ccf3df6d397b5c3072087637</data>
+    </node>
+    <node id="&quot;HUMANITY'S RESPONSE&quot;">
+      <data key="d0">"EVENT"</data>
+      <data key="d1">"Humanity's Response is the collective action taken by Alex's team in response to a message from an unknown intelligence."</data>
+      <data key="d2">chunk-1a56ad86ccf3df6d397b5c3072087637</data>
+    </node>
+    <node id="&quot;NVIDIA CORPORATION&quot;">
+      <data key="d0">"ORGANIZATION"</data>
+      <data key="d1">"NVIDIA CORPORATION is a technology company that has made significant changes to its operations and investments."&lt;SEP&gt;"NVIDIA Corporation is a leading company in the technology industry, presenting their financial statements and non-GAAP measures."&lt;SEP&gt;"NVIDIA Corporation is the world leader in AI and accelerated computing."&lt;SEP&gt;"NVIDIA is a technology company that reports on its financial performance."</data>
+      <data key="d2">chunk-b1b73a57b95939f82e27b7fd0b2c2972&lt;SEP&gt;chunk-1a56ad86ccf3df6d397b5c3072087637&lt;SEP&gt;chunk-78df1f539992cb28c28a410f21531b64&lt;SEP&gt;chunk-e0cb40afc3ae079d7936969df0855775</data>
+    </node>
+    <node id="&quot;DAVE ALPER&quot;">
+      <data key="d0">"PERSON"</data>
+      <data key="d1">"Dave Alper is a member of NVIDIA's executive leadership team."</data>
+      <data key="d2">chunk-b1b73a57b95939f82e27b7fd0b2c2972</data>
+    </node>
+    <node id="&quot;CURTIS RICHTER&quot;">
+      <data key="d0">"PERSON"</data>
+      <data key="d1">"Curtis Richter is the Chief Financial Officer of NVIDIA Corporation."</data>
+      <data key="d2">chunk-b1b73a57b95939f82e27b7fd0b2c2972</data>
+    </node>
+    <node id="&quot;NVIDIA'">
+      <data key="d0">"TECHNOLOGY"</data>
+      <data key="d1">"NVIDIA is a technology company specializing in AI and accelerated computing."</data>
+      <data key="d2">chunk-b1b73a57b95939f82e27b7fd0b2c2972</data>
+    </node>
+    <node id="&quot;TOSHIYA HARI&quot;">
+      <data key="d0">"PERSON"</data>
+      <data key="d1">"Toshiya Hari is a person representing NVIDIA in Investor Relations."</data>
+      <data key="d2">chunk-e9bb1e8500cf9eb0f0943644663c0b2b</data>
+    </node>
+    <node id="&quot;MYLENE MANGALINDAN&quot;">
+      <data key="d0">"PERSON"</data>
+      <data key="d1">"Mylene Mangalindan is a person representing NVIDIA in Corporate Communications."</data>
+      <data key="d2">chunk-e9bb1e8500cf9eb0f0943644663c0b2b</data>
+    </node>
+    <edge source="&quot;ALEX&quot;" target="&quot;TAYLOR&quot;">
+      <data key="d3">14.0</data>
+      <data key="d4">"Alex is affected by Taylor's authoritarian certainty and observes changes in Taylor's attitude towards the device."</data>
+      <data key="d5">chunk-1a56ad86ccf3df6d397b5c3072087637&lt;SEP&gt;chunk-78df1f539992cb28c28a410f21531b64</data>
+      <data key="d6">1</data>
+    </edge>
+    <edge source="&quot;ALEX&quot;" target="&quot;JORDAN&quot;">
+      <data key="d3">12.0</data>
+      <data key="d4">"Alex and Jordan share a commitment to discovery, which contrasts with Cruz's vision."</data>
+      <data key="d5">chunk-1a56ad86ccf3df6d397b5c3072087637&lt;SEP&gt;chunk-78df1f539992cb28c28a410f21531b64</data>
+      <data key="d6">1</data>
+    </edge>
+    <edge source="&quot;ALEX&quot;" target="&quot;FIRST CONTACT&quot;">
+      <data key="d3">10.0</data>
+      <data key="d4">"Alex leads the team that might be making the First Contact with the unknown intelligence."</data>
+      <data key="d5">chunk-1a56ad86ccf3df6d397b5c3072087637</data>
+      <data key="d6">1</data>
+    </edge>
+    <edge source="&quot;ALEX&quot;" target="&quot;HUMANITY'S RESPONSE&quot;">
+      <data key="d3">8.0</data>
+      <data key="d4">"Alex and his team are the key figures in Humanity's Response to the unknown intelligence."</data>
+      <data key="d5">chunk-1a56ad86ccf3df6d397b5c3072087637</data>
+      <data key="d6">1</data>
+    </edge>
+    <edge source="&quot;TAYLOR&quot;" target="&quot;JORDAN&quot;">
+      <data key="d3">16.0</data>
+      <data key="d4">"Taylor and Jordan interact directly regarding the device, leading to a moment of mutual respect and an uneasy truce."</data>
+      <data key="d5">chunk-1a56ad86ccf3df6d397b5c3072087637&lt;SEP&gt;chunk-78df1f539992cb28c28a410f21531b64</data>
+      <data key="d6">1</data>
+    </edge>
+    <edge source="&quot;TAYLOR&quot;" target="&quot;THE DEVICE&quot;">
+      <data key="d3">18.0</data>
+      <data key="d4">"Taylor shows reverence towards the device, indicating its importance and potential impact."</data>
+      <data key="d5">chunk-1a56ad86ccf3df6d397b5c3072087637&lt;SEP&gt;chunk-78df1f539992cb28c28a410f21531b64</data>
+      <data key="d6">1</data>
+    </edge>
+    <edge source="&quot;JORDAN&quot;" target="&quot;CRUZ&quot;">
+      <data key="d3">10.0</data>
+      <data key="d4">"Jordan's commitment to discovery is in rebellion against Cruz's vision of control and order."</data>
+      <data key="d5">chunk-1a56ad86ccf3df6d397b5c3072087637&lt;SEP&gt;chunk-78df1f539992cb28c28a410f21531b64</data>
+      <data key="d6">1</data>
+    </edge>
+    <edge source="&quot;WASHINGTON&quot;" target="&quot;THE TEAM&quot;">
+      <data key="d3">14.0</data>
+      <data key="d4">"The team receives communications from Washington, which influences their decision-making process."</data>
+      <data key="d5">chunk-1a56ad86ccf3df6d397b5c3072087637&lt;SEP&gt;chunk-e0cb40afc3ae079d7936969df0855775</data>
+      <data key="d6">1</data>
+    </edge>
+    <edge source="&quot;OPERATION: DULCE&quot;" target="&quot;THE TEAM&quot;">
+      <data key="d3">18.0</data>
+      <data key="d4">"The team is directly involved in Operation: Dulce, executing its evolved objectives and activities."</data>
+      <data key="d5">chunk-1a56ad86ccf3df6d397b5c3072087637&lt;SEP&gt;chunk-e0cb40afc3ae079d7936969df0855775</data>
+      <data key="d6">1</data>
+    </edge>
+    <edge source="&quot;SAM RIVERA&quot;" target="&quot;INTELLIGENCE&quot;">
+      <data key="d3">9.0</data>
+      <data key="d4">"Sam Rivera is directly involved in the process of learning to communicate with the unknown intelligence."</data>
+      <data key="d5">chunk-1a56ad86ccf3df6d397b5c3072087637</data>
+      <data key="d6">1</data>
+    </edge>
+    <edge source="&quot;CONTROL&quot;" target="&quot;INTELLIGENCE&quot;">
+      <data key="d3">7.0</data>
+      <data key="d4">"The concept of Control is challenged by the Intelligence that writes its own rules."</data>
+      <data key="d5">chunk-1a56ad86ccf3df6d397b5c3072087637</data>
+      <data key="d6">1</data>
+    </edge>
+  </graph>
 </graphml>

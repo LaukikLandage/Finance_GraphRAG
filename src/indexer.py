@@ -21,7 +21,7 @@ async def ollama_complete(prompt: str, **kwargs) -> str:
     # role="user"는 "사용자가 말한 것"이라는 뜻이에요!
     # content는 실제 질문 내용이에요!
     response = ollama.chat(
-        model="llama3",  # llama3 모델을 사용해요!
+        model="llama3.2:3b",  # llama3.2:3b 모델을 사용해요!
         messages=[{"role": "user", "content": prompt}]
     )
     # response["message"]["content"]는 AI가 답한 내용을 가져오는 거예요!
