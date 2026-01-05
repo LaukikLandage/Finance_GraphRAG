@@ -24,5 +24,12 @@ build/
 Thumbs.db
 
 # 그래프 저장소는 커밋하지 않아요 (너무 크고 생성되는 파일이에요!)
-# graph_storage/
+graph_storage/
+graph_storage_api/
+my_graph_data/
+src/my_graph_data/
+
+# 업로드된 임시 파일
+src/_uploaded_temp.pdf
+*.pdf.tmp
 
