@@ -1,0 +1,28 @@
+# 가상환경 폴더는 커밋하지 않아요 (너무 크고 불필요해요!)
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Python 관련
+.Python
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+
+# IDE 관련
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS 관련
+.DS_Store
+Thumbs.db
+
+# 그래프 저장소는 커밋하지 않아요 (너무 크고 생성되는 파일이에요!)
+# graph_storage/
+
