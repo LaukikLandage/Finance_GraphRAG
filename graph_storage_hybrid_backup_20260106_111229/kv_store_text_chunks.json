@@ -1,0 +1,50 @@
+{
+  "chunk-c491c7fbd7c8f2bcc5e88b5a3255567b": {
+    "tokens": 18,
+    "content": "NVIDIA reported record revenue of $57.0 billion in Q3 2026.",
+    "chunk_order_index": 0,
+    "full_doc_id": "doc-c491c7fbd7c8f2bcc5e88b5a3255567b"
+  },
+  "chunk-591a23e71c425bd2330898fde75d1a91": {
+    "tokens": 23,
+    "content": "NVIDIA reported revenue for the fourth quarter ended January 28, 2024, of $22.1 billion",
+    "chunk_order_index": 0,
+    "full_doc_id": "doc-591a23e71c425bd2330898fde75d1a91"
+  },
+  "chunk-098f6bcd4621d373cade4e832627b4f6": {
+    "tokens": 1,
+    "content": "test",
+    "chunk_order_index": 0,
+    "full_doc_id": "doc-098f6bcd4621d373cade4e832627b4f6"
+  },
+  "chunk-0cbc6611f5540bd0809a388dc95a615b": {
+    "tokens": 1,
+    "content": "Test",
+    "chunk_order_index": 0,
+    "full_doc_id": "doc-0cbc6611f5540bd0809a388dc95a615b"
+  },
+  "chunk-947c3833b014fe8e2ba85a48417149a9": {
+    "tokens": 18,
+    "content": "NVIDIA reported record revenue of $57.0 billion in Q3 2026.f",
+    "chunk_order_index": 0,
+    "full_doc_id": "doc-947c3833b014fe8e2ba85a48417149a9"
+  },
+  "chunk-0eb9dfb4a951d17dd3853d112b5aabd9": {
+    "tokens": 21,
+    "content": "This domain is for use in documentation examples without needing permission. Avoid use in operations.Learn more Learn more",
+    "chunk_order_index": 0,
+    "full_doc_id": "doc-0eb9dfb4a951d17dd3853d112b5aabd9"
+  },
+  "chunk-b75a70d3b62c99749ea1399ed21aabd6": {
+    "tokens": 213,
+    "content": "In this article Nvidia has agreed to buy assets from Groq, a designer of high-performance artificial intelligence accelerator chips, for $20 billion in cash, according to Alex Davis, CEO of Disruptive, which led the startup's latest financing round in September.  Davis, whose firm has invested more than half a billion dollars in Groq since the company was founded in 2016, said the deal came together quickly. Groq raised $750 million at a valuation of about $6.9 billion three months ago. Investors in the round included Blackrock and Neuberger Berman, as well as Samsung, Cisco, Altimeter and 1789 Capital, where Donald Trump Jr. is a partner.  Groq said in a blog post Wednesday that it's \"entered into a non-exclusive licensing agreement with Nvidia for Groq's inference technology,\" without disclosing a price. With the deal, Groq founder and CEO Jonathan Ross along with Sunny Madra, the company's president, and other senior leaders \"will join Nvidia to help advance and scale the licensed",
+    "chunk_order_index": 0,
+    "full_doc_id": "doc-b75a70d3b62c99749ea1399ed21aabd6"
+  },
+  "chunk-2e470dedd05b45c97fe6e4fc7e8acb60": {
+    "tokens": 1069,
+    "content": "This summer, AI chip startup Groq raised $750 million at a valuation of $6.9 billion. Just three months later, Nvidia celebrated the holidays by dropping nearly three times that to license its technology and squirrel away its talent. In the days that followed, the armchair AI gurus of the web have been speculating wildly as to how Nvidia can justify spending $20 billion to get Groq’s tech and people. Pundits believe Nvidia knows something we don't. Theories run the gamut from the deal signifying Nvidia intends to ditch HBM for SRAM, a play to secure additional foundry capacity from Samsung, or an attempt to quash a potential competitor. Some hold water better than others, and we certainly have a few of our own. Nvidia paid $20 billion to non-exclusively license Groq's intellectual property, which includes its language processing units (LPUs) and accompanying software libraries. Groq's LPUs form the foundation of its high-performance inference-as-a-service offering, which it will keep and continue to operate without interruption after the deal closes. The arrangement is clearly engineered to avoid regulatory scrutiny. Nvidia isn't buying Groq, it's licensing its tech. Except… it's totally buying Groq. How else to describe a deal that sees Groq’s CEO Jonathan Ross and president Sunny Madra move to Nvidia, along with most of its engineering talent? Sure, Groq is technically sticking around as an independent company with Simon Edwards at the helm as its new CEO, but with much of its talent gone, it's hard to see how the chip startup survives long-term. The argument that Nvidia just wiped a competitor off the board therefore works. Whether that move was worth $20 billion is another matter, given it could provoke an antitrust lawsuit. One prominent theory about Nvidia’s motives is that Groq’s LPUs use static random access memory (SRAM), which is orders of magnitude faster than the high-bandwidth memory (HBM) found in GPUs today. A single HBM3e stack can achieve about 1 TB/s of memory bandwidth per module and 8 TB/s per GPU today. The SRAM in Groq's LPUs can be 10 to 80 times faster. Since large language model (LLM) inference is predominantly bound by memory bandwidth, Groq can achieve stupendously fast token generation rates. In Llama 3.3 70B, the benchmarkers at Artificial Analysis report that Groq's chips can churn out 350 tok/s. Performance is even better when running a mixture of experts models, like gpt-oss 120B, where the chips managed 465 tok/s. We're also in the middle of a global memory shortage and demand for HBM has never been higher. So, we understand why some might look at this deal and think Groq could help Nvidia cope with the looming memory crunch. The simplest answer is often the right one – just not this time. Sorry to have to tell you this, but there's nothing special about SRAM. It's in basically every modern processor, including Nvidia's chips. SRAM also has a pretty glaring downside. It's not exactly what you'd call space efficient. We're talking, at most, a few hundred megabytes per chip compared to 36 GB for a 12-high HBM3e stack for a total of 288 GB per GPU. Groq's LPUs have just 230 MB of SRAM each, which means you need hundreds or even thousands of them just to run a modest LLM. At 16-bit precision, you'd need 140 GB of memory to hold the model weights and an additional 40 GB for every 128,000 token sequence. Groq needed 574 LPUs stitched together using a high-speed interconnect fabric to run Llama 70B. You can get around this by building a bigger chip – each of Cerebras' WSE-3 wafers features more than 40 GB of SRAM on board, but these chips are the size of a dinner plate and consume 23 kilowatts. Anyway, Groq hasn't gone this route. Suffice it to say, if Nvidia wanted to make a chip that uses SRAM instead of HBM, it didn't need to buy Groq to do it. So, what did Nvidia throw money at Groq for? Our best guess is that it was really for Groq's \"assembly line architecture.\" This is essentially a programmable data flow design built with the express purpose of accelerating the linear algebra calculations computed during inference. Most processors today use a Von Neumann architecture. Instructions are fetched from memory, decoded, executed, and then written to a register or stored in memory. Modern implementations introduce things like branch prediction, but the principles are largely the same. Data flow works on a different principle. Rather than a bunch of load-store operations, data flow architectures essentially process data as it's streamed through the chip. As Groq explains it, these data conveyor belts \"move instructions and data between the chip's SIMD (single instruction/multiple data) function units.\" \"At each step of the assembly process, the function unit receives instructions via the conveyor belt. The instructions inform the function unit where it should go to get the input data (which conveyor belt), which function it should perform with that data, and where it should place t",
+    "chunk_order_index": 0,
+    "full_doc_id": "doc-2e470dedd05b45c97fe6e4fc7e8acb60"
+  }
+}

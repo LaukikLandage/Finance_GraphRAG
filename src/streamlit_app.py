@@ -1,150 +1,603 @@
-import os
-import sys
-
-# Streamlit은 웹 UI를 쉽게 만드는 도구예요!
-# 마치 파이썬으로 파워포인트 + 웹페이지를 섞어서 만드는 느낌이에요!
 import streamlit as st
-
-# requests는 다른 서버(FastAPI)에 HTTP 요청을 보내는 도구예요!
-# 마치 "택배를 보내고, 답장을 받는 우체국" 같은 역할이에요!
 import requests
+import sys
+import os
+import streamlit.components.v1 as components
+import time
+import json
+from datetime import datetime
 
-# 현재 파일(src 폴더) 경로를 파이썬 모듈 경로에 추가해요
-# 이렇게 하면 parser.py 같은 걸 import 할 수 있어요!
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-sys.path.append(BASE_DIR)
+# 현재 파일의 폴더 경로를 추가해요!
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
-from parser import extract_text_from_pdf  # PDF -> 텍스트 함수
-
-
-# -------------------------------
-# 1. 기본 설정 (페이지 레이아웃)
-# -------------------------------
-
-# 페이지 제목과 레이아웃을 설정해요
+# 페이지 설정
 st.set_page_config(
-    page_title="Financial GraphRAG UI",
-    layout="wide",  # wide는 화면을 가로로 넓게 쓰겠다는 뜻이에요!
+    page_title="VIK AI GraphRAG",
+    page_icon="🤖",
+    layout="wide"
 )
 
-# 세션 상태에 채팅 내역 저장 상자를 하나 만들어요
-if "messages" not in st.session_state:
-    # messages는 채팅 기록이 들어갈 리스트예요!
-    # 각 원소는 {"role": "user" or "assistant", "content": "..."} 이런 딕셔너리예요!
-    st.session_state["messages"] = []
+# 데이터 소스 관리 파일 경로
+DATA_SOURCES_FILE = os.path.join(os.path.dirname(os.path.dirname(__file__)), "data_sources.json")
 
+# 데이터 소스 로드 함수
+def load_data_sources():
+    if os.path.exists(DATA_SOURCES_FILE):
+        with open(DATA_SOURCES_FILE, 'r', encoding='utf-8') as f:
+            return json.load(f)
+    return {"pdfs": [], "urls": [], "texts": []}
 
-# -------------------------------
-# 2. 사이드바: PDF 업로드 & 인덱싱
-# -------------------------------
+# 데이터 소스 저장 함수
+def save_data_sources(data_sources):
+    with open(DATA_SOURCES_FILE, 'w', encoding='utf-8') as f:
+        json.dump(data_sources, f, ensure_ascii=False, indent=2)
 
+# 데이터 소스 추가 함수
+def add_data_source(source_type, name, content_preview=""):
+    data_sources = load_data_sources()
+    source = {
+        "name": name,
+        "added_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "content_preview": content_preview[:100] + "..." if len(content_preview) > 100 else content_preview
+    }
+    data_sources[source_type].append(source)
+    save_data_sources(data_sources)
+
+# 데이터 소스 삭제 함수
+def delete_data_source(source_type, index):
+    data_sources = load_data_sources()
+    if 0 <= index < len(data_sources[source_type]):
+        del data_sources[source_type][index]
+        save_data_sources(data_sources)
+        return True
+    return False
+
+# 제목
+st.title("🤖 VIK AI: Financial GraphRAG")
+st.markdown("금융 보고서를 분석하는 GraphRAG 시스템이에요!")
+
+# API 엔드포인트
+API_BASE_URL = "http://127.0.0.1:8000"
+
+# 사이드바
 with st.sidebar:
-    st.title("📄 PDF 인덱싱")
-
-    # FastAPI 서버 주소예요
-    # 만약 포트를 바꾸면 여기만 수정하면 돼요!
-    api_base = "http://localhost:8000"
-
-    # PDF 업로드 위젯이에요
-    uploaded_pdf = st.file_uploader("PDF 파일 올리기", type=["pdf"])
-
-    # "PDF → 텍스트 추출 + 인덱싱" 버튼
-    if st.button("📚 이 PDF로 그래프 인덱싱하기", type="primary"):
-        if uploaded_pdf is None:
-            st.error("먼저 PDF 파일을 올려주세요!")
-        else:
-            try:
-                # 업로드된 파일을 임시 경로에 저장해요
-                tmp_path = os.path.join(BASE_DIR, "_uploaded_temp.pdf")
-                with open(tmp_path, "wb") as tmp_f:
-                    tmp_f.write(uploaded_pdf.read())
-
-                # parser.extract_text_from_pdf로 텍스트를 뽑아요
-                st.info("PDF에서 텍스트 추출 중... (조금만 기다려주세요)")
-                text = extract_text_from_pdf(tmp_path)
-
-                # FastAPI /insert로 텍스트를 보내요
-                st.info("GraphRAG에 텍스트 인덱싱 중... (조금 시간이 걸릴 수 있어요)")
-                resp = requests.post(
-                    f"{api_base}/insert",
-                    json={"text": text},
-                    timeout=120,
-                )
-
-                if resp.status_code == 200:
-                    st.success("✅ 인덱싱 완료! 이제 질문할 수 있어요.")
-                else:
-                    st.error(f"❌ 인덱싱 실패: {resp.status_code} - {resp.text}")
-
-            except Exception as e:
-                st.error(f"❌ 에러 발생: {e}")
-
-    st.markdown("---")
-
-    # 그래프 현황판: FastAPI에 간단한 통계를 물어볼 거예요
-    st.subheader("📊 그래프 현황")
+    st.header("📊 시스템 상태")
+    
+    # 서버 상태 확인
     try:
-        stats_resp = requests.get(f"{api_base}/graph_stats", timeout=5)
-        if stats_resp.status_code == 200:
-            data = stats_resp.json()
-            st.write(f"노드 수: **{data.get('nodes', 0)}**")
-            st.write(f"엣지 수: **{data.get('edges', 0)}**")
+        response = requests.get(f"{API_BASE_URL}/health", timeout=2)
+        if response.status_code == 200:
+            st.success("✅ 서버 연결됨")
+            server_connected = True
         else:
-            st.write("그래프 정보를 가져올 수 없어요.")
-    except Exception:
-        st.write("FastAPI 서버가 아직 안 켜졌을 수도 있어요.")
-
-
-# -------------------------------
-# 3. 중앙: 채팅 UI (질문/답변)
-# -------------------------------
-
-st.title("💬 Financial GraphRAG 챗봇")
-st.caption("왼쪽에서 PDF를 인덱싱한 후, 여기서 자연어로 질문해보세요!")
-
-# 지금까지의 메시지를 위에서부터 순서대로 보여줘요
-for msg in st.session_state["messages"]:
-    role = "👤 사용자" if msg["role"] == "user" else "🤖 GraphRAG"
-    with st.chat_message(msg["role"]):
-        st.markdown(f"**{role}**\n\n{msg['content']}")
-
-# 새 질문 입력창 (Streamlit의 chat_input은 Enter 치면 바로 전송돼요)
-user_input = st.chat_input("엔비디아에 대해 뭐가 궁금해? (예: What is NVIDIA's revenue?)")
-
-if user_input:
-    # 1) 화면에 사용자 메시지 추가
-    st.session_state["messages"].append({"role": "user", "content": user_input})
-    with st.chat_message("user"):
-        st.markdown(f"**👤 사용자**\n\n{user_input}")
-
-    # 2) FastAPI /query에 질문 보내기
+            st.error("❌ 서버 응답 오류")
+            server_connected = False
+    except:
+        st.error("❌ 서버 연결 실패")
+        server_connected = False
+    
+    # 그래프 통계
     try:
-        with st.chat_message("assistant"):
-            with st.spinner("생각 중이에요... (Ollama + GraphRAG 호출 중)"):
-                resp = requests.post(
-                    f"{api_base}/query",
-                    json={"question": user_input},
-                    timeout=120,
-                )
-                if resp.status_code == 200:
-                    data = resp.json()
-                    answer = data.get("answer", "(no answer)")
-                    st.markdown(f"**🤖 GraphRAG**\n\n{answer}")
-                    # 세션에도 저장
-                    st.session_state["messages"].append(
-                        {"role": "assistant", "content": answer}
+        response = requests.get(f"{API_BASE_URL}/graph_stats", timeout=2)
+        if response.status_code == 200:
+            stats = response.json()
+            st.metric("노드 수", stats.get("nodes", 0))
+            st.metric("엣지 수", stats.get("edges", 0))
+    except:
+        st.warning("⚠️ 그래프 통계를 가져올 수 없어요")
+    
+    st.divider()
+    
+    # 모드 선택
+    st.header("⚙️ 설정")
+    query_mode = st.radio(
+        "질문 모드 선택",
+        options=["api", "local"],
+        format_func=lambda x: "🌐 OpenAI API (정확)" if x == "api" else "💻 Ollama 로컬 (빠름)",
+        help="API 모드는 OpenAI를 사용하고, Local 모드는 Ollama를 사용해요!"
+    )
+    
+    if query_mode == "api":
+        st.info("💡 OpenAI API를 사용해요. 더 정확하지만 유료예요.")
+    else:
+        st.info("💡 Ollama 로컬 모델을 사용해요. 무료지만 Ollama 서버가 실행 중이어야 해요!")
+    
+    st.divider()
+    
+    # 그래프 시각화 새로고침 버튼
+    st.header("🎨 그래프 시각화")
+    if st.button("🔄 그래프 새로고침", use_container_width=True):
+        st.rerun()
+
+# 메인 영역
+tab1, tab2, tab3, tab4 = st.tabs(["💬 질문하기", "📝 데이터 추가", "🎨 그래프 시각화", "📚 데이터 목록"])
+
+# 탭 1: 질문하기
+with tab1:
+    st.header("💬 질문하기")
+    
+    # 질문 입력
+    question = st.text_input(
+        "질문을 입력하세요",
+        placeholder="예: What is NVIDIA's revenue?",
+        key="question_input"
+    )
+    
+    # 질문 버튼
+    if st.button("🔍 질문하기", type="primary", use_container_width=True):
+        if not question:
+            st.warning("⚠️ 질문을 입력해주세요!")
+        else:
+            with st.spinner(f"🤔 답변 생성 중... ({query_mode} 모드)"):
+                try:
+                    response = requests.post(
+                        f"{API_BASE_URL}/query",
+                        json={
+                            "question": question,
+                            "mode": query_mode  # 선택한 모드 사용!
+                        },
+                        timeout=120
                     )
-                else:
-                    err = f"❌ 오류: {resp.status_code} - {resp.text}"
-                    st.error(err)
-                    st.session_state["messages"].append(
-                        {"role": "assistant", "content": err}
-                    )
-    except Exception as e:
-        err = f"❌ 서버 연결 에러: {e}"
-        st.error(err)
-        st.session_state["messages"].append(
-            {"role": "assistant", "content": err}
+                    
+                    if response.status_code == 200:
+                        result = response.json()
+                        st.success(f"✅ 답변 완료! ({result.get('mode', 'unknown')} 모드)")
+                        
+                        # 답변 표시
+                        st.markdown("### 🤖 AI의 답변")
+                        st.markdown(result.get("answer", "답변을 생성할 수 없어요."))
+                    else:
+                        st.error(f"❌ 에러: {response.status_code}")
+                        st.error(response.text)
+                        
+                except Exception as e:
+                    st.error(f"❌ 에러 발생: {str(e)}")
+
+# 탭 2: 텍스트 추가
+with tab2:
+    st.header("📝 데이터 추가")
+    
+    # 입력 방법 선택
+    input_method = st.radio(
+        "입력 방법 선택",
+        options=["텍스트 직접 입력", "PDF 업로드", "URL 크롤링"],
+        horizontal=True
+    )
+    
+    # 1. 텍스트 직접 입력
+    if input_method == "텍스트 직접 입력":
+        text_input = st.text_area(
+            "인덱싱할 텍스트를 입력하세요",
+            placeholder="예: NVIDIA reported revenue of $57.0 billion...",
+            height=200,
+            key="text_input"
         )
+        
+        if st.button("📚 텍스트 추가하기", type="primary", use_container_width=True):
+            if not text_input:
+                st.warning("⚠️ 텍스트를 입력해주세요!")
+            else:
+                with st.spinner("📚 인덱싱 중... (시간이 걸릴 수 있어요)"):
+                    try:
+                        response = requests.post(
+                            f"{API_BASE_URL}/insert",
+                            json={"text": text_input},
+                            timeout=300
+                        )
+                        
+                        if response.status_code == 200:
+                            result = response.json()
+                            st.success("✅ 인덱싱 완료!")
+                            
+                            # 데이터 소스 기록
+                            add_data_source("texts", "텍스트 입력", text_input)
+                            
+                            # 그래프 자동 재생성
+                            with st.spinner("🎨 그래프 재생성 중..."):
+                                import subprocess
+                                project_root = os.path.dirname(os.path.dirname(__file__))
+                                result = subprocess.run(
+                                    ["python3", "src/visualize.py"],
+                                    capture_output=True,
+                                    text=True,
+                                    cwd=project_root
+                                )
+                                if result.returncode == 0:
+                                    st.success("✅ 그래프가 업데이트되었어요!")
+                                    # 파일 수정 시간 강제 업데이트
+                                    graph_html_path = os.path.join(project_root, "graph_ui.html")
+                                    if os.path.exists(graph_html_path):
+                                        os.utime(graph_html_path, None)
+                                    # 세션 상태 초기화
+                                    st.session_state.last_graph_mtime = 0
+                                    st.info("💡 '그래프 시각화' 탭을 클릭하면 새 그래프를 볼 수 있어요!")
+                                else:
+                                    st.warning(f"⚠️ 그래프 재생성 실패: {result.stderr}")
+                        else:
+                            st.error(f"❌ 에러: {response.status_code}")
+                            st.error(response.text)
+                            
+                    except Exception as e:
+                        st.error(f"❌ 에러 발생: {str(e)}")
+    
+    # 2. PDF 업로드
+    elif input_method == "PDF 업로드":
+        uploaded_file = st.file_uploader(
+            "PDF 파일을 업로드하세요",
+            type=["pdf"],
+            key="pdf_uploader"
+        )
+        
+        if st.button("📄 PDF 추가하기", type="primary", use_container_width=True):
+            if not uploaded_file:
+                st.warning("⚠️ PDF 파일을 업로드해주세요!")
+            else:
+                with st.spinner("📄 PDF 처리 중..."):
+                    try:
+                        # 파일명 안전하게 처리
+                        safe_filename = uploaded_file.name if uploaded_file.name else "uploaded.pdf"
+                        safe_filename = safe_filename.replace(" ", "_")  # 공백 제거
+                        
+                        # PDF 파일을 임시로 저장
+                        temp_pdf_path = os.path.join(
+                            os.path.dirname(os.path.dirname(__file__)),  # 프로젝트 루트 디렉토리
+                            f"temp_{safe_filename}"
+                        )
+                        
+                        st.info(f"📝 파일명: {safe_filename}")
+                        
+                        with open(temp_pdf_path, "wb") as f:
+                            f.write(uploaded_file.getbuffer())
+                        
+                        st.info(f"✅ 파일 저장 완료: {temp_pdf_path}")
+                        
+                        # PDF에서 텍스트 추출
+                        from parser import extract_text_from_pdf
+                        text = extract_text_from_pdf(temp_pdf_path)
+                        
+                        st.info(f"📝 추출된 텍스트: {len(text)} 글자")
+                        
+                        # 임시 파일 삭제
+                        if os.path.exists(temp_pdf_path):
+                            os.remove(temp_pdf_path)
+                            st.info(f"🗑️ 임시 파일 삭제 완료")
+                        
+                        # 인덱싱
+                        with st.spinner("📚 인덱싱 중..."):
+                            response = requests.post(
+                                f"{API_BASE_URL}/insert",
+                                json={"text": text},
+                                timeout=300
+                            )
+                            
+                            if response.status_code == 200:
+                                st.success("✅ PDF 인덱싱 완료!")
+                                
+                                # 데이터 소스 기록
+                                add_data_source("pdfs", safe_filename, text)
+                                
+                                # 그래프 자동 재생성
+                                with st.spinner("🎨 그래프 재생성 중..."):
+                                    import subprocess
+                                    project_root = os.path.dirname(os.path.dirname(__file__))
+                                    result = subprocess.run(
+                                        ["python3", "src/visualize.py"],
+                                        capture_output=True,
+                                        text=True,
+                                        cwd=project_root
+                                    )
+                                    
+                                    st.info(f"📊 그래프 재생성 결과: returncode={result.returncode}")
+                                    if result.stdout:
+                                        st.text(f"출력: {result.stdout[-200:]}")  # 마지막 200자만
+                                    
+                                    if result.returncode == 0:
+                                        st.success("✅ 그래프가 업데이트되었어요!")
+                                        st.info("💡 '그래프 시각화' 탭에서 확인하세요!")
+                                        # 파일 수정 시간 강제 업데이트
+                                        graph_html_path = os.path.join(project_root, "graph_ui.html")
+                                        if os.path.exists(graph_html_path):
+                                            # 파일 수정 시간 업데이트
+                                            os.utime(graph_html_path, None)
+                                            st.success(f"✅ 그래프 파일 타임스탬프 업데이트!")
+                                        # 세션 상태 초기화하여 강제 새로고침
+                                        st.session_state.last_graph_mtime = 0
+                                        st.rerun()  # 페이지 새로고침
+                                    else:
+                                        st.warning(f"⚠️ 그래프 재생성 실패")
+                                        if result.stderr:
+                                            st.error(f"에러: {result.stderr}")
+                            else:
+                                st.error(f"❌ 에러: {response.status_code}")
+                                st.error(response.text)
+                                
+                    except Exception as e:
+                        st.error(f"❌ 에러 발생: {str(e)}")
+                        import traceback
+                        st.code(traceback.format_exc())
+                        # 에러 시에도 임시 파일 삭제
+                        if 'temp_pdf_path' in locals() and os.path.exists(temp_pdf_path):
+                            os.remove(temp_pdf_path)
+    
+    # 3. URL 크롤링
+    elif input_method == "URL 크롤링":
+        url_input = st.text_input(
+            "크롤링할 URL을 입력하세요",
+            placeholder="예: https://www.example.com/news",
+            key="url_input"
+        )
+        
+        if st.button("🌐 URL 추가하기", type="primary", use_container_width=True):
+            if not url_input:
+                st.warning("⚠️ URL을 입력해주세요!")
+            else:
+                with st.spinner("🌐 웹 페이지 크롤링 중..."):
+                    try:
+                        # URL 크롤링 및 인덱싱
+                        from url import auto_researcher
+                        
+                        # auto_researcher 함수 호출
+                        result = auto_researcher(url_input)
+                        
+                        if result.get("status") == "success":
+                            st.success("✅ URL 크롤링 및 인덱싱 완료!")
+                            
+                            # 데이터 소스 기록
+                            add_data_source("urls", url_input, result.get("text", "")[:100])
+                            
+                            # 그래프 자동 재생성
+                            with st.spinner("🎨 그래프 재생성 중..."):
+                                import subprocess
+                                result_viz = subprocess.run(
+                                    ["python3", "src/visualize.py"],
+                                    capture_output=True,
+                                    text=True,
+                                    cwd=os.path.dirname(os.path.dirname(__file__))
+                                )
+                                if result_viz.returncode == 0:
+                                    st.success("✅ 그래프가 업데이트되었어요!")
+                                    # 파일 수정 시간 강제 업데이트
+                                    project_root = os.path.dirname(os.path.dirname(__file__))
+                                    graph_html_path = os.path.join(project_root, "graph_ui.html")
+                                    if os.path.exists(graph_html_path):
+                                        os.utime(graph_html_path, None)
+                                    # 세션 상태 초기화
+                                    st.session_state.last_graph_mtime = 0
+                                    st.info("💡 '그래프 시각화' 탭을 클릭하면 새 그래프를 볼 수 있어요!")
+                                else:
+                                    st.warning(f"⚠️ 그래프 재생성 실패: {result_viz.stderr}")
+                        else:
+                            st.error(f"❌ 에러: {result.get('error', '알 수 없는 오류')}")
+                            
+                    except Exception as e:
+                        st.error(f"❌ 에러 발생: {str(e)}")
 
+# 탭 3: 그래프 시각화
+with tab3:
+    st.header("🎨 그래프 시각화")
+    
+    # 그래프 시각화 설명
+    st.markdown("""
+    현재 그래프의 구조를 인터랙티브하게 확인할 수 있어요!
+    - 노드를 드래그해서 이동할 수 있어요
+    - 마우스 휠로 확대/축소할 수 있어요
+    - 노드를 클릭하면 연결된 노드가 하이라이트돼요
+    """)
+    
+    # 그래프 파일 경로
+    graph_html_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "graph_ui.html")
+    
+    # 그래프 파일이 있는지 확인
+    if os.path.exists(graph_html_path):
+        # 파일 수정 시간 확인
+        file_mtime = os.path.getmtime(graph_html_path)
+        file_time = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(file_mtime))
+        
+        # 세션 상태에 마지막 확인 시간 저장
+        if 'last_graph_mtime' not in st.session_state:
+            st.session_state.last_graph_mtime = 0
+        
+        # 파일이 업데이트되었는지 확인
+        graph_updated = file_mtime > st.session_state.last_graph_mtime
+        if graph_updated:
+            st.session_state.last_graph_mtime = file_mtime
+        
+        col1, col2 = st.columns([3, 1])
+        with col1:
+            st.info(f"📅 마지막 업데이트: {file_time}")
+            if graph_updated:
+                st.success("✨ 그래프가 업데이트되었어요!")
+        with col2:
+            if st.button("🔄 새로고침", key="refresh_graph"):
+                st.session_state.last_graph_mtime = 0
+                st.rerun()
+        
+        # HTML 파일 읽기 (파일 수정 시간을 해시로 사용하여 캐시 무효화)
+        with open(graph_html_path, 'r', encoding='utf-8') as f:
+            html_content = f.read()
+        
+        # 그래프 표시 (파일 수정 시간을 URL 파라미터로 추가하여 브라우저 캐시 무효화)
+        # iframe의 src에 타임스탬프를 추가하는 방식으로 강제 새로고침
+        import hashlib
+        content_hash = hashlib.md5(html_content.encode()).hexdigest()[:8]
+        
+        # HTML 내용에 타임스탬프 메타 태그 추가
+        if '<head>' in html_content:
+            timestamp_meta = f'<meta name="cache-control" content="no-cache, no-store, must-revalidate"><meta name="timestamp" content="{file_mtime}">'
+            html_content = html_content.replace('<head>', f'<head>{timestamp_meta}')
+        
+        # 그래프 표시
+        components.html(html_content, height=800, scrolling=True)
+        
+        st.divider()
+        
+        # 그래프 재생성 버튼
+        st.markdown("### 🔧 그래프 관리")
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            if st.button("🎨 그래프 재생성", use_container_width=True):
+                with st.spinner("그래프 생성 중..."):
+                    try:
+                        # visualize.py 실행
+                        import subprocess
+                        result = subprocess.run(
+                            ["python3", "src/visualize.py"],
+                            capture_output=True,
+                            text=True,
+                            cwd=os.path.dirname(os.path.dirname(__file__))
+                        )
+                        
+                        if result.returncode == 0:
+                            st.success("✅ 그래프가 재생성되었어요!")
+                            time.sleep(1)  # 파일 쓰기 완료 대기
+                            st.rerun()
+                        else:
+                            st.error(f"❌ 에러: {result.stderr}")
+                    except Exception as e:
+                        st.error(f"❌ 에러 발생: {str(e)}")
+        
+        with col2:
+            if st.button("📊 그래프 통계 보기", use_container_width=True):
+                try:
+                    response = requests.get(f"{API_BASE_URL}/graph_stats", timeout=2)
+                    if response.status_code == 200:
+                        stats = response.json()
+                        st.json(stats)
+                except Exception as e:
+                    st.error(f"❌ 에러: {str(e)}")
+    else:
+        st.warning("⚠️ 그래프 파일을 찾을 수 없어요!")
+        st.info(f"경로: {graph_html_path}")
+        
+        # 그래프 생성 버튼
+        if st.button("🎨 그래프 생성하기", type="primary", use_container_width=True):
+            with st.spinner("그래프 생성 중..."):
+                try:
+                    # visualize.py 실행
+                    import subprocess
+                    result = subprocess.run(
+                        ["python3", "src/visualize.py"],
+                        capture_output=True,
+                        text=True,
+                        cwd=os.path.dirname(os.path.dirname(__file__))
+                    )
+                    
+                    if result.returncode == 0:
+                        st.success("✅ 그래프가 생성되었어요!")
+                        time.sleep(1)  # 파일 쓰기 완료 대기
+                        st.rerun()
+                    else:
+                        st.error(f"❌ 에러: {result.stderr}")
+                        st.code(result.stdout)
+                except Exception as e:
+                    st.error(f"❌ 에러 발생: {str(e)}")
 
+# 탭 4: 데이터 목록
+with tab4:
+    st.header("📚 데이터 소스 목록")
+    
+    st.markdown("""
+    지금까지 추가한 PDF, URL, 텍스트 목록을 확인하고 관리할 수 있어요!
+    """)
+    
+    # 데이터 소스 로드
+    data_sources = load_data_sources()
+    
+    # PDF 목록
+    st.subheader("📄 PDF 파일")
+    if data_sources["pdfs"]:
+        for idx, pdf in enumerate(data_sources["pdfs"]):
+            col1, col2, col3 = st.columns([3, 2, 1])
+            with col1:
+                st.write(f"**{pdf['name']}**")
+            with col2:
+                st.caption(f"추가: {pdf['added_at']}")
+            with col3:
+                if st.button("🗑️ 삭제", key=f"delete_pdf_{idx}"):
+                    if delete_data_source("pdfs", idx):
+                        st.success("✅ 삭제되었어요!")
+                        st.rerun()
+            
+            # 내용 미리보기
+            with st.expander("📝 내용 미리보기"):
+                st.text(pdf.get('content_preview', '미리보기 없음'))
+            
+            st.divider()
+    else:
+        st.info("아직 추가된 PDF가 없어요!")
+    
+    # URL 목록
+    st.subheader("🌐 URL")
+    if data_sources["urls"]:
+        for idx, url in enumerate(data_sources["urls"]):
+            col1, col2, col3 = st.columns([3, 2, 1])
+            with col1:
+                st.write(f"**{url['name']}**")
+            with col2:
+                st.caption(f"추가: {url['added_at']}")
+            with col3:
+                if st.button("🗑️ 삭제", key=f"delete_url_{idx}"):
+                    if delete_data_source("urls", idx):
+                        st.success("✅ 삭제되었어요!")
+                        st.rerun()
+            
+            # 내용 미리보기
+            with st.expander("📝 내용 미리보기"):
+                st.text(url.get('content_preview', '미리보기 없음'))
+            
+            st.divider()
+    else:
+        st.info("아직 추가된 URL이 없어요!")
+    
+    # 텍스트 목록
+    st.subheader("📝 텍스트")
+    if data_sources["texts"]:
+        for idx, text in enumerate(data_sources["texts"]):
+            col1, col2, col3 = st.columns([3, 2, 1])
+            with col1:
+                st.write(f"**{text['name']}**")
+            with col2:
+                st.caption(f"추가: {text['added_at']}")
+            with col3:
+                if st.button("🗑️ 삭제", key=f"delete_text_{idx}"):
+                    if delete_data_source("texts", idx):
+                        st.success("✅ 삭제되었어요!")
+                        st.rerun()
+            
+            # 내용 미리보기
+            with st.expander("📝 내용 미리보기"):
+                st.text(text.get('content_preview', '미리보기 없음'))
+            
+            st.divider()
+    else:
+        st.info("아직 추가된 텍스트가 없어요!")
+    
+    # 전체 통계
+    st.divider()
+    st.subheader("📊 전체 통계")
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        st.metric("📄 PDF", len(data_sources["pdfs"]))
+    with col2:
+        st.metric("🌐 URL", len(data_sources["urls"]))
+    with col3:
+        st.metric("📝 텍스트", len(data_sources["texts"]))
+    
+    # 전체 삭제 버튼
+    st.divider()
+    st.warning("⚠️ 주의: 아래 버튼은 모든 데이터 소스 기록을 삭제해요! (그래프 데이터는 유지돼요)")
+    if st.button("🗑️ 전체 기록 삭제", type="secondary"):
+        save_data_sources({"pdfs": [], "urls": [], "texts": []})
+        st.success("✅ 모든 기록이 삭제되었어요!")
+        st.rerun()
+
+# 푸터
+st.divider()
+st.markdown("""
+<div style='text-align: center; color: gray; font-size: 0.9em;'>
+    VIK AI Hybrid GraphRAG v2.0 | 
+    <a href='http://localhost:8000/docs' target='_blank'>API 문서</a> | 
+    <a href='https://github.com' target='_blank'>GitHub</a>
+</div>
+""", unsafe_allow_html=True)

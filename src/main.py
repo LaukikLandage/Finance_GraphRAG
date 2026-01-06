@@ -54,6 +54,11 @@ async def ollama_embedding_if(texts):
 ollama_embedding_if.embedding_dim = 768
 
 async def main():
+    # 개발 모드 설정
+    # DEV_MODE가 True면 앞 50줄만 사용해서 빠르게 테스트해요!
+    # False면 전체 문서를 사용해서 제대로 학습해요!
+    DEV_MODE = False  # 개발할 때는 True로 바꿔요!
+    
     # 1. 그래프 데이터 폴더 설정
     # 중요: API로 새로 학습시키려면 기존 폴더를 지우거나 이름을 바꿔주세요!
     WORKING_DIR = "./graph_storage_api" 
@@ -75,10 +80,23 @@ async def main():
     # with open()은 파일을 여는 거예요. 마치 공책을 펼치는 것처럼!
     # "r"은 "읽기 모드"예요. 파일을 읽을 수 있다는 뜻이에요!
     # encoding="utf-8"은 한글도 제대로 읽을 수 있게 해주는 거예요!
-    print("📄 PDF 텍스트 파일 읽는 중...")
+    print("PDF 텍스트 파일 읽는 중...")
     with open("data/sample_report.txt", "r", encoding="utf-8") as f:
-        # f.read()는 파일 전체를 읽어오는 거예요. 마치 공책 전체를 한 번에 읽는 것처럼!
-        content = f.read()
+        if DEV_MODE:
+            # 개발 모드: 앞 50줄만 사용 (빠른 테스트용!)
+            # 마치 "책의 앞부분만 읽어서 연습하는" 것처럼!
+            lines = []
+            for i, line in enumerate(f):
+                if i >= 50:  # 50줄까지만 읽어요!
+                    break
+                lines.append(line)
+            content = "".join(lines)
+            print(f"개발 모드: 앞 {len(lines)}줄만 사용해요!")
+        else:
+            # 실전 모드: 전체 문서 사용
+            # f.read()는 파일 전체를 읽어오는 거예요. 마치 공책 전체를 한 번에 읽는 것처럼!
+            content = f.read()
+            print(f"실전 모드: 전체 문서 사용 ({len(content)} 글자)")
 
     # 4. 인덱싱 (공부 시작!)
     # rag.ainsert()는 비동기로 텍스트를 그래프에 넣는 거예요!

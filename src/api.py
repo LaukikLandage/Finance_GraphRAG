@@ -13,6 +13,12 @@ import asyncio
 # sys.path.append()는 "이 경로도 찾아봐"라는 뜻이에요!
 import sys
 import os
+# requests는 HTTP 요청을 보내는 도구예요!
+# 마치 "다른 서버에 편지를 보내는 우체국" 같은 거예요!
+import requests
+# networkx는 그래프를 다루는 도구예요!
+# 마치 "그래프 지도를 읽고 쓸 수 있는 도구" 같은 거예요!
+import networkx as nx
 # 현재 파일의 폴더 경로를 추가해요!
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 # main.py에서 함수들을 가져와요!
@@ -74,6 +80,8 @@ async def root():
             "/query": "질문하기 (POST)",
             "/insert": "텍스트 추가하기 (POST)",
             "/health": "서버 상태 확인 (GET)",
+            "/ollama/health": "Ollama 서버 상태 확인 (GET)",
+            "/graph_stats": "그래프 현황 확인 (GET)",
             "/docs": "API 문서 보기 (GET)"
         }
     }
@@ -83,6 +91,53 @@ async def root():
 async def health():
     # 서버가 잘 작동하고 있다는 것을 알려주는 거예요!
     return {"status": "healthy", "message": "서버가 정상적으로 작동 중이에요!"}
+
+# @app.get("/ollama/health")는 "Ollama 서버 상태를 확인하는" 엔드포인트예요!
+@app.get("/ollama/health")
+async def ollama_health():
+    try:
+        # Ollama 서버에 요청을 보내서 상태를 확인해요!
+        # 마치 "안녕하세요, 살아있나요?"라고 물어보는 거예요!
+        response = requests.get("http://localhost:11434/api/tags", timeout=2)
+        if response.status_code == 200:
+            return {"status": "ok", "message": "Ollama 서버가 정상적으로 작동 중이에요!"}
+        else:
+            return {"status": "error", "message": "Ollama 서버가 응답하지 않아요!"}
+    except Exception as e:
+        # except는 "만약 에러가 생기면"이라는 뜻이에요!
+        return {"status": "error", "message": f"Ollama 서버에 연결할 수 없어요: {str(e)}"}
+
+# @app.get("/graph_stats")는 "그래프 통계를 보여주는" 엔드포인트예요!
+@app.get("/graph_stats")
+async def graph_stats():
+    # if는 "만약"이라는 뜻이에요!
+    if graph_rag is None:
+        return {"nodes": 0, "edges": 0, "message": "GraphRAG가 아직 초기화되지 않았어요!"}
+    
+    try:
+        # try는 "시도해봐"라는 뜻이에요!
+        # os.path.join()은 경로를 합치는 거예요!
+        # 마치 "폴더/파일"을 하나로 합치는 것처럼!
+        graphml_path = os.path.join(graph_rag.working_dir, "graph_chunk_entity_relation.graphml")
+        
+        # os.path.exists()는 파일이 있는지 확인하는 거예요!
+        if not os.path.exists(graphml_path):
+            return {"nodes": 0, "edges": 0, "message": "그래프 파일이 아직 없어요!"}
+        
+        # nx.read_graphml()은 GraphML 파일을 읽어서 그래프로 만드는 거예요!
+        # 마치 "그래프 지도를 읽어서 메모리에 올리는" 것처럼!
+        G = nx.read_graphml(graphml_path)
+        
+        # G.number_of_nodes()는 노드 개수를 세는 거예요!
+        # G.number_of_edges()는 엣지 개수를 세는 거예요!
+        return {
+            "nodes": G.number_of_nodes(),
+            "edges": G.number_of_edges(),
+            "status": "success"
+        }
+    except Exception as e:
+        # except는 "만약 에러가 생기면"이라는 뜻이에요!
+        return {"nodes": 0, "edges": 0, "error": str(e)}
 
 # @app.post("/query")는 "질문을 받아서 답변을 주는" 엔드포인트예요!
 # POST는 "데이터를 보낼 때" 사용하는 HTTP 메서드예요!
