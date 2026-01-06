@@ -153,6 +153,7 @@ async def graph_stats():
           summary="그래프 초기화",
           description="기존 그래프 스토리지를 백업하고 삭제한 후 새로운 그래프로 시작해요!")
 async def reset_graph():
+    global engine
     # if는 "만약"이라는 뜻이에요!
     if engine is None:
         raise HTTPException(status_code=503, detail="엔진이 아직 초기화되지 않았어요!")
@@ -170,7 +171,6 @@ async def reset_graph():
             print(f"✅ 기존 그래프 백업 완료: {backup_dir}")
         
         # 엔진 재초기화
-        global engine
         engine = HybridGraphRAGEngine()
         
         return {

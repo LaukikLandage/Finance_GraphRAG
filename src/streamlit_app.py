@@ -7,6 +7,13 @@ import time
 import json
 from datetime import datetime
 
+# .env 파일 읽기
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass
+
 # 현재 파일의 폴더 경로를 추가해요!
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
@@ -110,7 +117,7 @@ with st.sidebar:
         st.rerun()
 
 # 메인 영역
-tab1, tab2, tab3, tab4 = st.tabs(["💬 질문하기", "📝 데이터 추가", "🎨 그래프 시각화", "📚 데이터 목록"])
+tab1, tab2, tab3, tab4, tab5 = st.tabs(["💬 질문하기", "📝 데이터 추가", "🎨 그래프 시각화", "📚 데이터 목록", "🗄️ Neo4j 그래프"])
 
 # 탭 1: 질문하기
 with tab1:
@@ -610,6 +617,322 @@ with tab4:
         save_data_sources({"pdfs": [], "urls": [], "texts": []})
         st.success("✅ 모든 기록이 삭제되었어요!")
         st.rerun()
+
+# 탭 5: Neo4j 그래프
+with tab5:
+    st.header("🗄️ Neo4j 그래프 데이터")
+    
+    st.markdown("""
+    Neo4j 데이터베이스에 저장된 그래프 데이터를 확인할 수 있어요!
+    - 노드와 관계를 조회하고 시각화할 수 있어요
+    - Cypher 쿼리를 직접 실행할 수 있어요
+    """)
+    
+    # Neo4j 연결 설정
+    try:
+        from langchain_community.graphs import Neo4jGraph
+        import networkx as nx
+        try:
+            from pyvis.network import Network
+            PYVIS_AVAILABLE = True
+        except ImportError:
+            PYVIS_AVAILABLE = False
+            st.warning("⚠️ pyvis가 설치되지 않았어요. 그래프 시각화를 위해 'pip install pyvis'를 실행해주세요.")
+        
+        # Neo4j AuraDB 연결 정보 (환경변수에서 가져오기)
+        NEO4J_URI = os.getenv("NEO4J_URI", "")
+        NEO4J_USERNAME = os.getenv("NEO4J_USERNAME", "neo4j")
+        NEO4J_PASSWORD = os.getenv("NEO4J_PASSWORD", "")
+        
+        # 연결 정보 확인
+        if not NEO4J_URI or not NEO4J_PASSWORD:
+            st.error("❌ Neo4j 연결 정보가 설정되지 않았어요!")
+            st.info("""
+            💡 AuraDB를 사용하려면 환경변수에 다음을 설정해주세요:
+            - NEO4J_URI: neo4j+s://your-instance.databases.neo4j.io
+            - NEO4J_USERNAME: neo4j (또는 사용자 이름)
+            - NEO4J_PASSWORD: 비밀번호
+            
+            또는 .env 파일에 추가해주세요!
+            """)
+            st.stop()
+        
+        # Neo4j 연결
+        try:
+            neo4j_graph = Neo4jGraph(url=NEO4J_URI, username=NEO4J_USERNAME, password=NEO4J_PASSWORD)
+            st.success("✅ Neo4j 연결 성공!")
+            
+            # 통계 정보
+            st.subheader("📊 그래프 통계")
+            col1, col2, col3 = st.columns(3)
+            
+            # 노드 수 조회
+            node_count_query = "MATCH (n) RETURN count(n) as count"
+            node_result = neo4j_graph.query(node_count_query)
+            node_count = node_result[0]['count'] if node_result else 0
+            
+            # 관계 수 조회
+            rel_count_query = "MATCH ()-[r]->() RETURN count(r) as count"
+            rel_result = neo4j_graph.query(rel_count_query)
+            rel_count = rel_result[0]['count'] if rel_result else 0
+            
+            # 노드 타입별 개수
+            node_types_query = "MATCH (n) RETURN labels(n) as labels, count(n) as count"
+            node_types_result = neo4j_graph.query(node_types_query)
+            
+            with col1:
+                st.metric("노드 수", node_count)
+            with col2:
+                st.metric("관계 수", rel_count)
+            with col3:
+                st.metric("노드 타입 수", len(node_types_result))
+            
+            # 노드 타입별 상세 정보
+            if node_types_result:
+                st.subheader("📋 노드 타입별 개수")
+                node_type_data = []
+                for item in node_types_result:
+                    labels = item.get('labels', [])
+                    count = item.get('count', 0)
+                    label_str = ', '.join(labels) if labels else 'No Label'
+                    node_type_data.append({"타입": label_str, "개수": count})
+                
+                if node_type_data:
+                    import pandas as pd
+                    df_types = pd.DataFrame(node_type_data)
+                    st.dataframe(df_types, use_container_width=True)
+            
+            st.divider()
+            
+            # 쿼리 실행 섹션
+            st.subheader("🔍 데이터 조회")
+            
+            # 미리 정의된 쿼리
+            query_options = {
+                "전체 노드 보기": "MATCH (n) RETURN n LIMIT 50",
+                "전체 관계 보기": "MATCH (a)-[r]->(b) RETURN a, r, b LIMIT 50",
+                "Company 노드 보기": "MATCH (n:Company) RETURN n LIMIT 20",
+                "FinancialMetric 노드 보기": "MATCH (n:FinancialMetric) RETURN n LIMIT 20",
+                "Amount 노드 보기": "MATCH (n:Amount) RETURN n LIMIT 20",
+                "REPORTED 관계 보기": "MATCH (a)-[r:REPORTED]->(b) RETURN a, r, b LIMIT 20",
+                "HAS_VALUE 관계 보기": "MATCH (a)-[r:HAS_VALUE]->(b) RETURN a, r, b LIMIT 20",
+            }
+            
+            selected_query = st.selectbox(
+                "미리 정의된 쿼리 선택",
+                options=list(query_options.keys()),
+                help="자주 사용하는 쿼리를 선택할 수 있어요!"
+            )
+            
+            # 사용자 정의 쿼리 입력
+            custom_query = st.text_area(
+                "또는 Cypher 쿼리를 직접 입력하세요",
+                value=query_options[selected_query],
+                height=100,
+                help="Cypher 쿼리 문법을 사용해서 데이터를 조회할 수 있어요!"
+            )
+            
+            if st.button("🔍 쿼리 실행", type="primary", use_container_width=True):
+                if custom_query:
+                    with st.spinner("쿼리 실행 중..."):
+                        try:
+                            # 여러 쿼리가 입력된 경우 세미콜론(;)으로 분리해요!
+                            # 예: "MATCH (n) RETURN n; MATCH (a)-[r]->(b) RETURN a, r, b"
+                            queries = [q.strip() for q in custom_query.split(';') if q.strip()]
+                            
+                            if len(queries) > 1:
+                                st.warning(f"⚠️ {len(queries)}개의 쿼리가 감지되었어요. 첫 번째 쿼리만 실행합니다!")
+                                st.info("💡 한 번에 하나의 쿼리만 실행할 수 있어요. 여러 쿼리를 실행하려면 하나씩 실행해주세요!")
+                                query_to_execute = queries[0]
+                            else:
+                                query_to_execute = custom_query.strip()
+                            
+                            result = neo4j_graph.query(query_to_execute)
+                            
+                            if result:
+                                st.success(f"✅ {len(result)}개의 결과를 찾았어요!")
+                                
+                                # 결과를 표로 표시
+                                import pandas as pd
+                                
+                                # 결과를 DataFrame으로 변환
+                                df = pd.DataFrame(result)
+                                st.dataframe(df, use_container_width=True)
+                                
+                                # 그래프 시각화 (노드와 관계가 있는 경우)
+                                if PYVIS_AVAILABLE and any('a' in row or 'b' in row or 'n' in row for row in result):
+                                    st.subheader("🎨 그래프 시각화")
+                                    
+                                    # NetworkX 그래프 생성
+                                    G = nx.Graph()
+                                    
+                                    # 결과에서 노드와 관계 추출
+                                    for row in result:
+                                        # 노드 추가
+                                        if 'n' in row:
+                                            node = row['n']
+                                            if hasattr(node, 'id'):
+                                                node_id = str(node.id)
+                                                node_labels = list(node.labels) if hasattr(node, 'labels') else []
+                                                node_props = dict(node) if hasattr(node, '__iter__') else {}
+                                                G.add_node(node_id, labels=node_labels, **node_props)
+                                        
+                                        # 관계 추가
+                                        if 'a' in row and 'r' in row and 'b' in row:
+                                            a = row['a']
+                                            r = row['r']
+                                            b = row['b']
+                                            
+                                            a_id = str(a.id) if hasattr(a, 'id') else str(a)
+                                            b_id = str(b.id) if hasattr(b, 'id') else str(b)
+                                            
+                                            # 노드 추가
+                                            if hasattr(a, 'labels'):
+                                                a_labels = list(a.labels)
+                                                a_props = dict(a) if hasattr(a, '__iter__') else {}
+                                                G.add_node(a_id, labels=a_labels, **a_props)
+                                            
+                                            if hasattr(b, 'labels'):
+                                                b_labels = list(b.labels)
+                                                # Neo4j Node 객체는 _properties 속성에 실제 딕셔너리 형태의 값이 들어 있어요!
+                                                # dict(b)로 변환하면 방금 본 것처럼 에러가 날 수 있어서 안전하게 _properties를 사용해요.
+                                                b_props = dict(getattr(b, "_properties", {}))
+                                                G.add_node(b_id, labels=b_labels, **b_props)
+                                            
+                                            # 관계 추가
+                                            rel_type = r.type if hasattr(r, 'type') else 'RELATED'
+                                            # Relationship도 마찬가지로 _properties를 사용하는 게 안전해요.
+                                            rel_props = dict(getattr(r, "_properties", {}))
+                                            G.add_edge(a_id, b_id, type=rel_type, **rel_props)
+                                    
+                                    if G.number_of_nodes() > 0:
+                                        # PyVis로 시각화
+                                        net = Network(height="600px", width="100%", bgcolor="#222222", font_color="white")
+                                        net.from_nx(G)
+                                        
+                                        # HTML 파일로 저장
+                                        import tempfile
+                                        with tempfile.NamedTemporaryFile(delete=False, suffix='.html', mode='w', encoding='utf-8') as f:
+                                            net.save_graph(f.name)
+                                            html_file = f.name
+                                        
+                                        # HTML 파일 읽기
+                                        with open(html_file, 'r', encoding='utf-8') as f:
+                                            html_content = f.read()
+                                        
+                                        # Streamlit에 표시
+                                        components.html(html_content, height=600, scrolling=True)
+                                        
+                                        # 임시 파일 삭제
+                                        os.unlink(html_file)
+                                        
+                                        st.info(f"📊 노드 {G.number_of_nodes()}개, 엣지 {G.number_of_edges()}개")
+                                    else:
+                                        st.info("시각화할 그래프 데이터가 없어요.")
+                            else:
+                                st.info("결과가 없어요.")
+                                
+                        except Exception as e:
+                            st.error(f"❌ 쿼리 실행 중 에러 발생: {str(e)}")
+                            import traceback
+                            st.code(traceback.format_exc())
+                else:
+                    st.warning("⚠️ 쿼리를 입력해주세요!")
+            
+            st.divider()
+            
+            # 전체 그래프 시각화
+            st.subheader("🎨 전체 그래프 시각화")
+            st.markdown("Neo4j에 저장된 전체 그래프를 시각화할 수 있어요!")
+            
+            if st.button("📊 전체 그래프 불러오기", type="primary", use_container_width=True):
+                with st.spinner("그래프 데이터를 불러오는 중..."):
+                    try:
+                        # 전체 그래프 쿼리
+                        full_graph_query = """
+                        MATCH (a)-[r]->(b)
+                        RETURN a, r, b
+                        LIMIT 100
+                        """
+                        
+                        result = neo4j_graph.query(full_graph_query)
+                        
+                        if result and PYVIS_AVAILABLE:
+                            # NetworkX 그래프 생성
+                            G = nx.DiGraph()  # 방향 그래프
+                            
+                            for row in result:
+                                a = row['a']
+                                r = row['r']
+                                b = row['b']
+                                
+                                a_id = str(a.id) if hasattr(a, 'id') else str(a)
+                                b_id = str(b.id) if hasattr(b, 'id') else str(b)
+                                
+                                # 노드 라벨과 속성 가져오기
+                                a_labels = list(a.labels) if hasattr(a, 'labels') else []
+                                b_labels = list(b.labels) if hasattr(b, 'labels') else []
+                                
+                                # Node의 실제 속성 딕셔너리는 _properties에 들어 있어요.
+                                a_props = dict(getattr(a, "_properties", {}))
+                                b_props = dict(getattr(b, "_properties", {}))
+                                
+                                # 노드 이름 (라벨 + 속성)
+                                a_name = f"{', '.join(a_labels)}: {a_props.get('name', a_id)}" if a_props.get('name') else f"{', '.join(a_labels)}: {a_id}"
+                                b_name = f"{', '.join(b_labels)}: {b_props.get('name', b_id)}" if b_props.get('name') else f"{', '.join(b_labels)}: {b_id}"
+                                
+                                # 노드 추가
+                                G.add_node(a_id, label=a_name, labels=a_labels, **a_props)
+                                G.add_node(b_id, label=b_name, labels=b_labels, **b_props)
+                                
+                                # 관계 추가
+                                rel_type = r.type if hasattr(r, 'type') else 'RELATED'
+                                # Relationship의 속성도 _properties를 사용해서 안전하게 가져와요.
+                                rel_props = dict(getattr(r, "_properties", {}))
+                                G.add_edge(a_id, b_id, type=rel_type, **rel_props)
+                            
+                            if G.number_of_nodes() > 0:
+                                # PyVis로 시각화
+                                net = Network(height="800px", width="100%", bgcolor="#222222", font_color="white", directed=True)
+                                net.from_nx(G)
+                                
+                                # HTML 파일로 저장
+                                import tempfile
+                                with tempfile.NamedTemporaryFile(delete=False, suffix='.html', mode='w', encoding='utf-8') as f:
+                                    net.save_graph(f.name)
+                                    html_file = f.name
+                                
+                                # HTML 파일 읽기
+                                with open(html_file, 'r', encoding='utf-8') as f:
+                                    html_content = f.read()
+                                
+                                # Streamlit에 표시
+                                components.html(html_content, height=800, scrolling=True)
+                                
+                                # 임시 파일 삭제
+                                os.unlink(html_file)
+                                
+                                st.success(f"✅ 그래프 시각화 완료! (노드 {G.number_of_nodes()}개, 엣지 {G.number_of_edges()}개)")
+                            else:
+                                st.warning("⚠️ 시각화할 그래프 데이터가 없어요!")
+                        else:
+                            if not PYVIS_AVAILABLE:
+                                st.error("❌ pyvis가 설치되지 않았어요. 'pip install pyvis'를 실행해주세요.")
+                            else:
+                                st.warning("⚠️ 그래프 데이터가 없어요!")
+                                
+                    except Exception as e:
+                        st.error(f"❌ 에러 발생: {str(e)}")
+                        import traceback
+                        st.code(traceback.format_exc())
+        
+        except Exception as e:
+            st.error(f"❌ Neo4j 연결 실패: {str(e)}")
+            st.info("💡 Neo4j 서버가 실행 중인지 확인해주세요!")
+    
+    except ImportError as e:
+        st.error(f"❌ 필요한 패키지가 설치되지 않았어요: {str(e)}")
+        st.info("💡 다음 명령어로 설치해주세요: pip install langchain-community neo4j networkx pyvis")
 
 # 푸터
 st.divider()

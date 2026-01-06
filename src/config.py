@@ -52,7 +52,23 @@ LOCAL_MODELS = {
 
 # --- [4] GraphRAG 작업 디렉토리 설정 ---
 # working_dir은 "그래프 데이터를 저장할 폴더"예요!
-WORKING_DIR = os.getenv("GRAPH_WORKING_DIR", "./graph_storage_hybrid")
+# macOS에서 권한 문제(Errno 1: Operation not permitted)가 날 수 있어서
+# 기본값을 사용자 쓰기 가능한 /tmp 하위로 변경해요.
+WORKING_DIR = os.getenv("GRAPH_WORKING_DIR", "/tmp/graph_storage_hybrid")
+
+# --- [4-1] 개발 모드 설정 (빠른 테스트용) ---
+# DEV_MODE가 True면 텍스트 앞부분만 사용해서 빠르게 테스트해요!
+# 환경변수 DEV_MODE=true 또는 DEV_MODE=1로 설정하면 활성화돼요!
+DEV_MODE = os.getenv("DEV_MODE", "false").lower() in ("true", "1", "yes")
+DEV_MODE_MAX_CHARS = int(os.getenv("DEV_MODE_MAX_CHARS", "5000"))  # 개발 모드일 때 최대 글자 수
+
+# --- [4-2] Neo4j 연결 설정 ---
+# Neo4j 데이터베이스에 연결하기 위한 설정들이에요!
+# NEO4J_AUTO_EXPORT가 True면 인덱싱 후 자동으로 Neo4j에 업로드해요!
+NEO4J_URI = os.getenv("NEO4J_URI", "")  # Neo4j 접속 주소 (예: neo4j+s://xxxxx.databases.neo4j.io)
+NEO4J_USERNAME = os.getenv("NEO4J_USERNAME", "neo4j")  # Neo4j 사용자 이름
+NEO4J_PASSWORD = os.getenv("NEO4J_PASSWORD", "")  # Neo4j 비밀번호
+NEO4J_AUTO_EXPORT = os.getenv("NEO4J_AUTO_EXPORT", "false").lower() in ("true", "1", "yes")  # 자동 업로드 여부
 
 # --- [5] 금융 특화 설정 ---
 # FINANCIAL_ENTITY_TYPES는 "금융에서 중요한 엔티티 타입들"이에요!
@@ -108,5 +124,8 @@ def print_config():
     print(f"📏 Embedding 차원: {models['embedding_dim']}")
     if RUN_MODE == "API":
         print(f"🔑 OpenAI API 키: {'✅ 설정됨' if OPENAI_API_KEY else '❌ 없음'}")
+    print(f"🗄️  Neo4j 자동 업로드: {'✅ 활성화' if NEO4J_AUTO_EXPORT else '❌ 비활성화'}")
+    if NEO4J_AUTO_EXPORT:
+        print(f"🔗 Neo4j URI: {'✅ 설정됨' if NEO4J_URI else '❌ 없음'}")
     print("=" * 50)
 

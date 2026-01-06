@@ -4,7 +4,8 @@
 import os
 import asyncio
 import sys
-from typing import Optional, Literal
+import re
+from typing import Optional, Literal, List
 from nano_graphrag import GraphRAG
 from openai import AsyncOpenAI
 from ollama import AsyncClient
@@ -44,9 +45,19 @@ from config import (
     API_MODELS,
     LOCAL_MODELS,
     WORKING_DIR,
+    DEV_MODE,
+    DEV_MODE_MAX_CHARS,
     get_models,
     validate_config,
 )
+
+# 토큰 단위 청크 생성을 위한 tiktoken
+try:
+    import tiktoken
+    TIKTOKEN_AVAILABLE = True
+except ImportError:
+    TIKTOKEN_AVAILABLE = False
+    print("⚠️  tiktoken이 설치되지 않았어요. 청크 분할을 문자 길이 기준으로 대신 처리해요.")
 
 # --- [1] OpenAI API를 사용하는 LLM 함수 (인덱싱용 - 금융 특화) ---
 # openai_model_if는 OpenAI API를 사용해서 AI에게 질문하는 함수예요!
@@ -174,7 +185,111 @@ async def ollama_embedding_if(texts: list[str]) -> list[list[float]]:
 # nomic-embed-text 모델은 768차원 벡터를 만들어요!
 ollama_embedding_if.embedding_dim = LOCAL_MODELS["embedding_dim"]
 
-# --- [5] 금융 특화 엔티티 추출 프롬프트 ---
+# --- [5] 텍스트 전처리 함수 ---
+# preprocess_text()는 "텍스트를 깔끔하게 정리하는" 함수예요!
+# 불용어 제거, 한 글자 단어 제거, 단어 연결을 해요!
+def preprocess_text(text: str) -> str:
+    # 불용어 리스트예요! (한국어와 영어)
+    # 불용어는 "의미가 없는 단어"예요. 마치 "그", "이", "the", "a" 같은 거예요!
+    stopwords = {
+        # 한국어 불용어
+        '이', '가', '을', '를', '에', '의', '와', '과', '로', '으로', '에서', '에게', '께', '한테',
+        '도', '만', '부터', '까지', '처럼', '같이', '보다', '마다', '조차', '마저', '뿐',
+        '은', '는', '이', '그', '저', '이것', '그것', '저것', '이런', '그런', '저런',
+        '있다', '없다', '되다', '하다', '이다', '아니다', '그렇다', '이렇다',
+        '것', '수', '때', '곳', '일', '년', '월', '일', '시', '분', '초',
+        # 영어 불용어
+        'the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for', 'of', 'with', 'by',
+        'is', 'are', 'was', 'were', 'be', 'been', 'being', 'have', 'has', 'had', 'do', 'does', 'did',
+        'will', 'would', 'should', 'could', 'may', 'might', 'must', 'can',
+        'this', 'that', 'these', 'those', 'it', 'they', 'we', 'you', 'he', 'she', 'i',
+        'from', 'as', 'if', 'when', 'where', 'what', 'who', 'which', 'why', 'how',
+        'about', 'into', 'through', 'during', 'before', 'after', 'above', 'below',
+        'up', 'down', 'out', 'off', 'over', 'under', 'again', 'further', 'then', 'once'
+    }
+    
+    # 1. 연속된 공백을 하나로 만들기
+    # re.sub()는 "정규표현식으로 텍스트를 바꾸는" 거예요!
+    # r'\s+'는 "하나 이상의 공백 문자"를 의미해요!
+    text = re.sub(r'\s+', ' ', text)
+    
+    # 2. 단어 단위로 분리하기 (한글, 영어, 숫자, 특수문자 포함)
+    # re.findall()은 "정규표현식에 맞는 모든 것을 찾는" 거예요!
+    # 패턴 설명:
+    # - r'\$[\d.]+'는 "$57.0" 같은 금액 표현을 찾아요!
+    # - r'[\d.]+%'는 "23.5%" 같은 퍼센트 표현을 찾아요!
+    # - r'[\w가-힣]+'는 "한글, 영어, 숫자, 언더스코어가 연속된 것"을 의미해요!
+    # - r'Q\d+'는 "Q3", "Q4" 같은 분기 표현을 찾아요!
+    # 이렇게 하면 금융 문서의 중요한 숫자 표현을 보존할 수 있어요!
+    words = []
+    # 먼저 특수 패턴들을 찾아요!
+    special_patterns = [
+        r'\$[\d.,]+',  # $57.0, $1,000 같은 금액
+        r'[\d.,]+%',   # 23.5%, 100% 같은 퍼센트
+        r'Q\d+',       # Q3, Q4 같은 분기
+        r'\d{4}',      # 2026 같은 연도
+    ]
+    # 나머지 텍스트에서 일반 단어를 찾아요!
+    remaining_text = text
+    for pattern in special_patterns:
+        matches = re.findall(pattern, remaining_text)
+        words.extend(matches)
+        # 찾은 패턴을 제거해서 중복을 방지해요!
+        remaining_text = re.sub(pattern, ' ', remaining_text)
+    # 나머지 텍스트에서 일반 단어를 찾아요!
+    words.extend(re.findall(r'[\w가-힣]+', remaining_text))
+    
+    # 3. 필터링: 불용어 제거, 한 글자 단어 제거
+    # filter()는 "조건에 맞는 것만 남기는" 거예요!
+    # lambda는 "작은 함수를 만드는" 거예요! 마치 "이 조건에 맞는 것만"이라는 뜻이에요!
+    filtered_words = []
+    for word in words:
+        # len(word) > 1은 "단어 길이가 1보다 크다"는 뜻이에요! (한 글자 제거)
+        # word.lower() not in stopwords는 "소문자로 바꾼 단어가 불용어 리스트에 없다"는 뜻이에요!
+        if len(word) > 1 and word.lower() not in stopwords:
+            filtered_words.append(word)
+    
+    # 4. 단어들을 공백으로 연결하기
+    # ' '.join()은 "단어들을 공백으로 연결하는" 거예요!
+    # 마치 "단어1 단어2 단어3"처럼 만들어요!
+    processed_text = ' '.join(filtered_words)
+    
+    # 5. 다시 연속된 공백 제거
+    processed_text = re.sub(r'\s+', ' ', processed_text).strip()
+    
+    # return은 "이걸 돌려줘"라는 뜻이에요!
+    return processed_text
+
+
+# --- [5-1] 텍스트 청크 함수 (토큰 기준, 비동기 인덱싱용) ---
+# chunk_text()는 "긴 텍스트를 여러 조각으로 나누는" 함수예요!
+# 토큰 기준으로 1200 토큰씩 잘라서 GraphRAG에 보낼 거예요.
+def chunk_text(text: str, max_tokens: int = 1200) -> List[str]:
+    # tiktoken이 있으면 토큰 기준으로 정확하게 자르고,
+    # 없으면 대략 4글자 = 1토큰으로 보고 문자 길이 기준으로 잘라요.
+    chunks: List[str] = []
+
+    if TIKTOKEN_AVAILABLE:
+        try:
+            # OpenAI 모델에 맞는 인코딩을 가져와요.
+            encoding = tiktoken.encoding_for_model(API_MODELS["llm"])
+        except Exception:
+            # 모델 이름을 알 수 없으면 기본 인코딩을 사용해요.
+            encoding = tiktoken.get_encoding("cl100k_base")
+
+        tokens = encoding.encode(text)
+        for i in range(0, len(tokens), max_tokens):
+            token_chunk = tokens[i : i + max_tokens]
+            chunks.append(encoding.decode(token_chunk))
+    else:
+        # 대략적인 문자 기준 청크 (4글자 ≈ 1토큰 가정)
+        approx_chars = max_tokens * 4
+        for i in range(0, len(text), approx_chars):
+            chunks.append(text[i : i + approx_chars])
+
+    return chunks
+
+# --- [6] 금융 특화 엔티티 추출 프롬프트 ---
 # get_financial_entity_prompt()는 "금융 엔티티를 추출하기 위한 프롬프트"를 만드는 함수예요!
 def get_financial_entity_prompt() -> str:
     # 이 프롬프트는 NanoGraphRAG가 엔티티를 추출할 때 사용해요!
@@ -231,11 +346,20 @@ class HybridGraphRAGEngine:
         # 인덱싱용 GraphRAG 인스턴스 (항상 OpenAI API 사용)
         # 인덱싱(공부)할 때는 정확한 금융 수치를 추출하기 위해 OpenAI API를 써요!
         # 기본 클러스터링 알고리즘 사용 (graspologic 더미 모듈로 처리)
+        
+        # 성능 최적화 파라미터:
+        # - chunk_token_size=1200: 청킹 단위를 크게 설정 (API 호출 횟수 감소)
+        # - enable_local_embedding=False: 로컬 임베딩 비활성화 (속도 향상)
+        # - addon_params에서 내부 배치 크기 조절 가능
         self.indexing_rag = GraphRAG(
             working_dir=self.working_dir,
             best_model_func=openai_model_if,      # OpenAI API 사용!
             cheap_model_func=openai_model_if,    # OpenAI API 사용!
             embedding_func=openai_embedding_if,  # OpenAI Embedding 사용!
+            chunk_token_size=1200,  # 청크 크기를 1200 토큰으로 설정 (기본값보다 큼)
+            addon_params={
+                "entity_extract_max_gleaning": 1,  # 엔티티 추출 반복 횟수 최소화 (기본값 1)
+            }
         )
         
         # 질문용 GraphRAG 인스턴스들 (API/LOCAL 선택 가능)
@@ -265,10 +389,56 @@ class HybridGraphRAGEngine:
     # ainsert()는 "비동기로 텍스트를 그래프에 넣는" 함수예요!
     # text는 "추가할 텍스트"예요!
     async def ainsert(self, text: str) -> None:
-        # indexing_rag.ainsert()는 OpenAI API를 사용해서 인덱싱하는 거예요!
-        # 마치 "정확하게 공부하는" 것처럼!
-        await self.indexing_rag.ainsert(text)
-        print("✅ 인덱싱 완료! (OpenAI API 사용)")
+        # 0) 개발 모드일 때는 텍스트를 짧게 자릅니다 (빠른 테스트용)
+        if DEV_MODE:
+            text = text[:DEV_MODE_MAX_CHARS]
+            print(f"🔧 [DEV_MODE] 텍스트를 {DEV_MODE_MAX_CHARS}자로 제한했어요!")
+        
+        # 1) 텍스트 전처리
+        processed_text = preprocess_text(text)
+
+        # 2) 긴 텍스트를 1200 토큰 단위로 청크로 나눠요.
+        chunks = chunk_text(processed_text, max_tokens=1200)
+        print(f"🔍 [DEBUG] 인덱싱용 청크 개수: {len(chunks)}")
+
+        # 3) 비동기 병렬 인덱싱을 위한 세마포어 (최대 동시 10개)
+        semaphore = asyncio.Semaphore(10)
+
+        async def insert_one(chunk_text: str, idx: int) -> None:
+            # 세마포어 안에서만 실제 API 호출을 해요.
+            async with semaphore:
+                print(f"🚀 [DEBUG] 청크 {idx+1}/{len(chunks)} 인덱싱 시작")
+                await self.indexing_rag.ainsert(chunk_text)
+                print(f"✅ [DEBUG] 청크 {idx+1}/{len(chunks)} 인덱싱 완료")
+
+        # 4) asyncio.gather로 여러 청크를 동시에 인덱싱해요.
+        tasks = [insert_one(chunk, i) for i, chunk in enumerate(chunks)]
+        await asyncio.gather(*tasks)
+
+        print("✅ 인덱싱 완료! (비동기 병렬 처리 + 텍스트 전처리 적용)")
+        
+        # 5) Neo4j로 자동 업로드 (설정되어 있을 경우)
+        # NEO4J_AUTO_EXPORT 환경변수가 true면 자동으로 Neo4j에 업로드해요!
+        neo4j_auto_export = os.getenv("NEO4J_AUTO_EXPORT", "false").lower() == "true"
+        if neo4j_auto_export:
+            print("📤 Neo4j로 자동 업로드 시작...")
+            try:
+                from database import export_to_neo4j
+                graphml_path = os.path.join(self.working_dir, "graph_chunk_entity_relation.graphml")
+                
+                if os.path.exists(graphml_path):
+                    result = await asyncio.to_thread(export_to_neo4j, graphml_path, clear_before=False)
+                    if result["status"] == "success":
+                        print(f"✅ Neo4j 업로드 완료! 노드: {result['nodes']}개, 관계: {result['edges']}개")
+                    else:
+                        print(f"⚠️ Neo4j 업로드 실패: {result['message']}")
+                else:
+                    print(f"⚠️ GraphML 파일을 찾을 수 없어요: {graphml_path}")
+            except Exception as e:
+                print(f"⚠️ Neo4j 업로드 중 에러 발생: {e}")
+                print("💡 NEO4J_URI, NEO4J_PASSWORD가 .env에 설정되어 있는지 확인해주세요!")
+        else:
+            print("💡 Neo4j 자동 업로드가 비활성화되어 있어요. NEO4J_AUTO_EXPORT=true로 설정하면 자동 업로드됩니다!")
     
     # aquery()는 "비동기로 질문에 답을 찾는" 함수예요!
     # question은 "질문 내용"이에요!
