@@ -1,5 +1,6 @@
-#TEAM. VIK CORPARATION
-##직급/계급도 
+# TEAM. VIK CORPARATION
+---
+## 직급/계급도 
 
 테스터 : 경리 정민서
 
