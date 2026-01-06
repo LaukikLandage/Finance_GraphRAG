@@ -1,4 +1,4 @@
-# FPT IS- 1st Week
+# FPT IS - 1st Week
 
 ## TEAM. VIK
 
