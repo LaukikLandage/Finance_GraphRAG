@@ -262,6 +262,25 @@ with tab2:
                             os.remove(temp_pdf_path)
                             st.info(f"🗑️ 임시 파일 삭제 완료")
                         
+                        # 그래프 자동 초기화 (PDF 추가 시마다 새로 시작)
+                        with st.spinner("🔄 그래프 초기화 중... (기존 데이터 백업 중)"):
+                            try:
+                                reset_response = requests.post(
+                                    f"{API_BASE_URL}/reset",
+                                    timeout=30
+                                )
+                                if reset_response.status_code == 200:
+                                    reset_result = reset_response.json()
+                                    st.success("✅ 그래프 초기화 완료!")
+                                    if reset_result.get("backup_dir"):
+                                        st.info(f"💾 기존 그래프 백업: {reset_result.get('backup_dir')}")
+                                else:
+                                    st.warning(f"⚠️ 그래프 초기화 실패: {reset_response.status_code}")
+                                    st.info("💡 기존 그래프에 추가로 진행합니다...")
+                            except Exception as e:
+                                st.warning(f"⚠️ 그래프 초기화 중 에러: {str(e)}")
+                                st.info("💡 기존 그래프에 추가로 진행합니다...")
+                        
                         # 인덱싱
                         with st.spinner("📚 인덱싱 중..."):
                             response = requests.post(

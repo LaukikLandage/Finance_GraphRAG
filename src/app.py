@@ -147,6 +147,40 @@ async def graph_stats():
     # engine.get_graph_stats()는 그래프 통계를 가져오는 거예요!
     return engine.get_graph_stats()
 
+# --- [7-2] 그래프 초기화 엔드포인트 ---
+# @app.post("/reset")는 "그래프를 초기화하는" 엔드포인트예요!
+@app.post("/reset",
+          summary="그래프 초기화",
+          description="기존 그래프 스토리지를 백업하고 삭제한 후 새로운 그래프로 시작해요!")
+async def reset_graph():
+    # if는 "만약"이라는 뜻이에요!
+    if engine is None:
+        raise HTTPException(status_code=503, detail="엔진이 아직 초기화되지 않았어요!")
+    
+    try:
+        import shutil
+        from datetime import datetime
+        
+        # 백업 폴더 이름 생성 (타임스탬프 포함)
+        backup_dir = f"{engine.working_dir}_backup_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+        
+        # 기존 그래프 스토리지가 있으면 백업
+        if os.path.exists(engine.working_dir):
+            shutil.move(engine.working_dir, backup_dir)
+            print(f"✅ 기존 그래프 백업 완료: {backup_dir}")
+        
+        # 엔진 재초기화
+        global engine
+        engine = HybridGraphRAGEngine()
+        
+        return {
+            "message": "그래프가 성공적으로 초기화되었어요!",
+            "status": "success",
+            "backup_dir": backup_dir if os.path.exists(backup_dir) else None
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"그래프 초기화 중 에러가 발생했어요: {str(e)}")
+
 # --- [7-1] 그래프 시각화 엔드포인트 ---
 # @app.get("/visualize")는 "그래프를 시각화하는 HTML 파일을 생성하는" 엔드포인트예요!
 @app.get("/visualize",
