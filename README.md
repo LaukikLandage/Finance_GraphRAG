@@ -14,5 +14,5 @@ VIK CORPARATION
 
 <https://mobility.fpt.edu.vn/>
 
-(<img width="1170" height="1560" alt="image" src="https://github.com/user-attachments/assets/8d6c234f-9c1d-400d-a5f9-7c7eb3855573" />
+<img width="1170" height="1560" alt="image" src="https://github.com/user-attachments/assets/8d6c234f-9c1d-400d-a5f9-7c7eb3855573" />
 
