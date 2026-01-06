@@ -1,4 +1,4 @@
-<img width="1170" height="1560" alt="608842689_892267393153639_8306070450792355364_n" src="https://github.com/user-attachments/assets/743870a7-f8ba-42c1-9c66-bfa13323b41b" /># TEAM. VIK CORPARATION
+VIK CORPARATION
 
 ---
 
