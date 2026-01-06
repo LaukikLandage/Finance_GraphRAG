@@ -26,10 +26,20 @@ Thumbs.db
 # 그래프 저장소는 커밋하지 않아요 (너무 크고 생성되는 파일이에요!)
 graph_storage/
 graph_storage_api/
+graph_storage_hybrid/
+graph_storage_hybrid_backup/
 my_graph_data/
 src/my_graph_data/
 
+# 그래프 시각화 파일 (생성되는 파일이에요!)
+graph_ui.html
+graph_visualization.html
+
+# 데이터 소스 기록 파일 (사용자마다 다를 수 있어요!)
+data_sources.json
+
 # 업로드된 임시 파일
 src/_uploaded_temp.pdf
+temp_*.pdf
 *.pdf.tmp
 
